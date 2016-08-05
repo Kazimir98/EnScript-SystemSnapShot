@@ -203,6 +203,7 @@ class MainClass
                 }
 
                 HandleSoftware(regSof);
+                Console.WriteLine("Information From: '{0}'", e.ItemPath());
                 Console.WriteLine("OS: {0}", OSName);
                 Console.WriteLine("Build: {0}", Build);
                 BkmrkOutput += String::Format("OS: {0}\n", OSName);
@@ -255,7 +256,7 @@ class MainClass
     "Program Finished",
     String::Format("This EnScript has finished, results can be found in the 'Console' and in 'Bookmarks' as '{0}'.\n\n{1}{2}", BookmarkName,
     "This script is written by Jordan venderBuhs and provided to you courtesy of EFS e-Forensic Services Inc.\n",
-    "Please direct all inquiries to 'enscript@e-forensic.ca'."
+    "Please direct all inquiries to 'dev@e-forensic.ca'."
     ));
   }
 
