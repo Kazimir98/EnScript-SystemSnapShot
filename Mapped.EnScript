@@ -1,0 +1,11 @@
+class Mapped : NameListClass
+{
+  //Class Objects
+  String     Str;
+
+  Mapped(Mapped parent = null, const String &name = "", const String &str = "") :
+  super(parent, name)
+  {
+    Str = str;
+  }
+}

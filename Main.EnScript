@@ -1,0 +1,1223 @@
+class MainClass;
+
+//include "ObjectClass"
+include "IpList"
+include "Mapped"
+include "Usb"
+include "Dialog"
+
+class MainClass
+{
+  //Globals
+  ItemIteratorClass                  Iter;
+  int                                IterOptions;
+  ItemIteratorClass::IterateModes    IterMode;
+  String                             ControlSet;
+  String                             OSName,
+                                     Build,
+                                     PCName,
+                                     Workgroup,
+                                     User,
+                                     UserLogOnTime;
+  Usb                                mainUsb;
+  String                             BkmrkOutput;
+  String                             BookmarkName;
+
+  //Constructor
+  MainClass() :
+  IterOptions = ItemIteratorClass::NORECURSE | ItemIteratorClass::NOPROXY,
+  IterMode = ItemIteratorClass::CURRENTVIEW,
+  ControlSet = "ControlSet001",
+  BookmarkName = "System Snap Shot",
+  mainUsb()
+  {
+  }
+
+  void Main(CaseClass c)
+  {
+    SystemClass::ClearConsole(1);
+    if(SystemClass::Message(SystemClass::ICONEXCLAMATION | SystemClass::MBYESNO,
+    "Disclaimer",
+    "This EnScript will only look at items when in the 'Viewing (Entry)' mode of Evidence. "
+    "It will provide you with a quick snapshot of the system you are looking at.\n\n"
+    "Would you like to run it?") == SystemClass::YES)
+    {
+      if(c)
+      {
+        if(c.HasEvidenceList())
+        {
+          Dialog dialog(this, c);
+          if(dialog.Execute() == SystemClass::OK)
+          {
+            String lastID;
+            Iter = new ItemIteratorClass(c, IterOptions, IterMode);
+            Console.WriteLine("***************************************************************");
+            Console.WriteLine("**** INFORMATION ON PC ****************************************");
+            BkmrkOutput += "***************************************************************\n";
+            BkmrkOutput += "**** INFORMATION ON PC ***************************************\n";
+
+            while(EntryClass e = Iter.GetNextEntry())
+            {
+              bool tripFlag;
+              //Get Used Letter, Volume Actual Name
+              if(!e.ItemPath().Contains(lastID))
+              {
+                if(e.ItemPath().Contains("\\"))
+                {
+                  DeviceClass d = Iter.GetCurrentDevice();
+                  if(d.Name().Contains(e.Name()))
+                  {
+                    tripFlag = true;
+                    continue;
+                  }
+                  Console.WriteLine("***************************************************************");
+                  BkmrkOutput += "***************************************************************\n";
+                  lastID = e.ItemPath();
+                  int spliter = lastID.Find("\\");
+                  Console.WriteLine("Drive Letter As Seen in EnCase: {0}", lastID.SubString(spliter+1, -1));
+                  BkmrkOutput += String::Format("Drive Letter As Seen in EnCase: {0}\n", lastID.SubString(spliter+1, -1));
+                  VolumeClass vol;
+                  vol = e.GetVolume();
+                  if(e.ItemPath().Contains("Unused Disk Area"))
+                    continue;
+                  else if(vol.VolumeName())
+                  {
+                    Console.WriteLine("Volume Label: {0}", vol.VolumeName());
+                    BkmrkOutput += String::Format("Volume Label: {0}\n", vol.VolumeName());
+                  }
+                  else
+                  {
+                    Console.WriteLine("Volume Label: <unspecified>");
+                    BkmrkOutput += "Volume Label: <unspecified>\n";
+                  }
+                  if(vol.IsEncrypted())
+                  {
+                    Console.WriteLine("Volume Encrypted with BitLocker.");
+                    BkmrkOutput += "Volume Encrypted with BitLocker.\n";
+                  }
+                  Console.WriteLine("Volume Size: {0} Bytes ({1} MB)", String::FormatInt(vol.TotalCapacity(), int::DECIMAL, COMMAS), String::FormatInt(vol.TotalCapacity()/1000000, int::DECIMAL, COMMAS));
+                  BkmrkOutput += String::Format("Volume Size: {0} Bytes ({1} MB)\n", String::FormatInt(vol.TotalCapacity(), int::DECIMAL, COMMAS), String::FormatInt(vol.TotalCapacity()/1000000, int::DECIMAL, COMMAS));
+                  uint fs = vol.GetFileSystem();
+                  Console.WriteLine("File System: {0}", GetFileSystem(fs));
+                  BkmrkOutput += String::Format("File System: {0}\n", GetFileSystem(fs));
+                  DateClass biasDate();
+                  biasDate = vol.Written();
+                  int bias = vol.GetDisplayBias(biasDate);
+                  Console.WriteLine("Time Zone: UTC{0}", bias/3600);
+                  BkmrkOutput += String::Format("Time Zone: UTC{0}\n", bias/3600);
+                  if(e.Find("/dev/null"))
+                  {
+                    Console.WriteLine("Unsupported Mac/Linux OS Partition.");
+                    BkmrkOutput += "Unsupported Mac/Linux OS Partition.\n";
+                  }
+                }
+                else
+                {
+                  DeviceClass d = Iter.GetCurrentDevice();
+                  if(d.IsPhysical())
+                    continue;
+                  Console.WriteLine("***************************************************************");
+                  BkmrkOutput += "***************************************************************\n";
+                  lastID = e.ItemPath();
+                  int spliter = lastID.Find("\\");
+                  Console.WriteLine("Drive Letter As Seen in EnCase: {0}", lastID.SubString(spliter+1, -1));
+                  BkmrkOutput += String::Format("Drive Letter As Seen in EnCase: {0}\n", lastID.SubString(spliter+1, -1));
+                  VolumeClass vol;
+                  vol = e.GetVolume();
+                  if(e.ItemPath().Contains("Unused Disk Area"))
+                    continue;
+                  else if(vol.VolumeName())
+                  {
+                    Console.WriteLine("Volume Label: {0}", vol.VolumeName());
+                    BkmrkOutput += String::Format("Volume Label: {0}\n", vol.VolumeName());
+                  }
+                  else
+                  {
+                    Console.WriteLine("Volume Label: <unspecified>");
+                    BkmrkOutput += "Volume Label: <unspecified>\n";
+                  }
+                  if(vol.IsEncrypted())
+                  {
+                    Console.WriteLine("Volume Encrypted with BitLocker.");
+                    BkmrkOutput += "Volume Encrypted with BitLocker.\n";
+                  }
+                  Console.WriteLine("Volume Size: {0} Bytes ({1} MB)", String::FormatInt(vol.TotalCapacity(), int::DECIMAL, COMMAS), String::FormatInt(vol.TotalCapacity()/1000000, int::DECIMAL, COMMAS));
+                  BkmrkOutput += String::Format("Volume Size: {0} Bytes ({1} MB)\n", String::FormatInt(vol.TotalCapacity(), int::DECIMAL, COMMAS), String::FormatInt(vol.TotalCapacity()/1000000, int::DECIMAL, COMMAS));
+                  uint fs = vol.GetFileSystem();
+                  Console.WriteLine("File System: {0}", GetFileSystem(fs));
+                  BkmrkOutput += String::Format("File System: {0}\n", GetFileSystem(fs));
+                  DateClass biasDate();
+                  biasDate = vol.Written();
+                  int bias = vol.GetDisplayBias(biasDate);
+                  Console.WriteLine("Time Zone: UTC{0}", bias/3600);
+                  BkmrkOutput += String::Format("Time Zone: UTC{0}\n", bias/3600);
+                  if(e.Find("/dev/null"))
+                  {
+                    Console.WriteLine("Unsupported Mac/Linux OS Partition.");
+                    BkmrkOutput += "Unsupported Mac/Linux OS Partition.\n";
+                  }
+                }
+              }
+              if(e.Find("\\Windows\\System32\\config"))
+              {
+                EntryClass eSof = e.Find("\\Windows\\System32\\config\\SOFTWARE");
+                RegistryClass regSof(eSof);
+
+                EntryClass eSys = e.Find("\\Windows\\System32\\config\\SYSTEM");
+                RegistryClass regSys(eSys);
+
+                EntryClass eSec = e.Find("\\Windows\\System32\\config\\SECURITY");
+                RegistryClass regSec(eSec);
+
+                EntryClass eAm = e.Find("\\Windows\\appcompat\\Programs\\Amcache.hve");
+                EntryClass eAmTmp = e.Find("\\Windows\\appcompat\\Programs\\Amcache.hve.tmp");
+
+                //Setting up the proper active control set
+                String runner = "SYSTEM\\Select";
+                RegCommandClass controlCmd();
+                RegCommandClass controlCommand(controlCmd, runner, READKEY, HKEY_LOCAL_MACHINE, runner, "", 0, -1);
+                RegValueClass controlValues();
+
+                if(regSys.Run(controlCmd, controlValues))
+                {
+                  if(RegValueClass deviceInfoRoot = controlValues.Find(runner))
+                  {
+                    foreach(RegValueClass child in deviceInfoRoot)
+                    {
+                      if(child.Name().Contains("Current"))
+                      {
+                        String temp, value;
+                        temp = child.ValueText();
+                        int size = temp.GetLength();
+                        for(int i = 0; i < size; i+=3)
+                        {
+                          value += int::Convert(temp.SubString(i, 2), HEX);
+                        }
+                        if(value.Contains("1"))
+                          ControlSet = "ControlSet001";
+                        else if(value.Contains("2"))
+                          ControlSet = "ControlSet002";
+                      }
+                    }
+                  }
+                }
+
+                HandleSoftware(regSof);
+                Console.WriteLine("OS: {0}", OSName);
+                Console.WriteLine("Build: {0}", Build);
+                BkmrkOutput += String::Format("OS: {0}\n", OSName);
+                BkmrkOutput += String::Format("Build: {0}\n", Build);
+
+                HandleSystem(regSys);
+                Console.WriteLine("PC Name: {0}", PCName);
+                BkmrkOutput += String::Format("PC Name: {0}\n", PCName);
+
+                HandleSecurity(regSec);
+                Console.WriteLine("WorkGroup: {0}", Workgroup);
+                BkmrkOutput += String::Format("WorkGroup: {0}\n", Workgroup);
+
+                Console.WriteLine("Areas Accessed on The Network: ");
+                BkmrkOutput += "Areas Accessed on The Network: \n";
+                HandleIPs(c);
+
+                Console.WriteLine("Mapped Network Drives: ");
+                BkmrkOutput += "Mapped Network Drives: \n";
+                HandleMapped(c);
+
+                HandleServices(c, eAm, eAmTmp);
+
+                if(mainUsb.FirstChild())
+                {
+                  Console.WriteLine("Devices Connected by USB (Vendor : Product : iSerial):");
+                  BkmrkOutput += "Devices Connected by USB (Vendor : Product : iSerial):\n";
+                  foreach(Usb usb in mainUsb)
+                  {
+                    Console.WriteLine("- {0} : {1} : {2}", usb.Manufacturer, usb.Product, usb.ISerial);
+                    BkmrkOutput += String::Format("- {0} : {1} : {2}\n", usb.Manufacturer, usb.Product, usb.ISerial);
+                  }
+                }
+              }
+            }
+            BkmrkOutput += "***************************************************************\n";
+            BkmrkOutput += "**** END OF INFORMATION **************************************\n";
+            BkmrkOutput += "***************************************************************\n";
+            BookmarkClass myNote(c.BookmarkRoot(), BookmarkName);
+            myNote.SetComment(BkmrkOutput);
+          }
+        }
+      }
+    }
+    Console.WriteLine("***************************************************************");
+    Console.WriteLine("**** END OF INFORMATION ***************************************");
+    Console.WriteLine("***************************************************************");
+
+    SystemClass::Message(SystemClass::ICONEXCLAMATION,
+    "Program Finished",
+    String::Format("This EnScript has finished, results can be found in the 'Console' and in 'Bookmarks' as '{0}'.\n\n{1}{2}", BookmarkName,
+    "This script is written by Jordan venderBuhs and provided to you courtesy of EFS e-Forensic Services Inc.\n",
+    "Please direct all inquiries to 'enscript@e-forensic.ca'."
+    ));
+  }
+
+  void HandleSoftware(RegistryClass regSof)
+  {
+    String runnerSof = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+    RegCommandClass cmdSof();
+    RegCommandClass commandSof(cmdSof, runnerSof, READKEY, HKEY_LOCAL_MACHINE, runnerSof, "", 0, -1);
+    RegValueClass regValuesSof();
+
+    if(regSof.Run(cmdSof, regValuesSof))
+    {
+      if(RegValueClass deviceInfoRoot = regValuesSof.Find(runnerSof))
+      {
+        foreach(RegValueClass child in deviceInfoRoot)
+        {
+          if(child.Name().Contains("ProductName"))
+          {
+            OSName = child.Value();
+          }
+          else if(child.Name().Contains("CurrentBuild"))
+          {
+            Build = child.Value();
+          }
+        }
+      }
+    }
+
+    String runnerUsr = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Authentication\\LogonUI";
+    RegCommandClass cmdUsr();
+    RegCommandClass commandUsr(cmdUsr, runnerUsr, READKEY, HKEY_LOCAL_MACHINE, runnerUsr, "", 0, -1);
+    RegValueClass regValuesUsr();
+
+    if(regSof.Run(cmdUsr, regValuesUsr))
+    {
+      if(RegValueClass deviceInfoRoot = regValuesUsr.Find(runnerUsr))
+      {
+        foreach(RegValueClass child in deviceInfoRoot)
+        {
+          if(child.Name().Contains("LastLoggedOnUser"))
+          {
+            if(!child.Name().Contains("LastLoggedOnUserSID"))
+            {
+              User = child.ValueText();
+              int split = User.Find("\\");
+              User = User.SubString(split+1, -1);
+              UserLogOnTime = child.LastWritten().GetString();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void HandleSystem(RegistryClass regSys)
+  {
+    String runnerSys = String::Format("SYSTEM\\{0}\\Services\\Tcpip", ControlSet);
+    RegCommandClass cmdSys();
+    RegCommandClass commandSys(cmdSys, runnerSys, READKEY, HKEY_LOCAL_MACHINE, runnerSys, "", 0, -1);
+    RegValueClass regValuesSys();
+    PCName = " ";
+
+    if(regSys.Run(cmdSys, regValuesSys))
+    {
+      Console.WriteLine("Command ran");
+      if(RegValueClass deviceInfoRoot = regValuesSys.Find(runnerSys))
+      {
+        Console.WriteLine(deviceInfoRoot.Name());
+        foreach(RegValueClass root in deviceInfoRoot)
+        {
+          if(root.Name().Contains("Parameters"))
+          {
+            foreach(RegValueClass child in root)
+            {
+              if(child.Name().Contains("HostName"))
+              {
+                if(PCName.GetLength() <= 1)
+                  PCName = child.Value();
+              }
+              else if(child.Name().Contains("Interfaces"))
+              {
+                foreach(RegValueClass grandChild in child)
+                {
+                  foreach(RegValueClass greatChild in grandChild)
+                  {
+                    if(greatChild.Name().Contains("DhcpIPAddress"))
+                    {
+                      String ip = greatChild.Value();
+                      Console.WriteLine("Computer IP: {0}", ip);
+                      BkmrkOutput += String::Format("Computer IP: {0}\n", ip);
+                    }
+                    else if(greatChild.Name().Contains("IPAddress"))
+                    {
+                      String ip = greatChild.Value();
+                      Console.WriteLine("Computer IP: {0}", ip);
+                      BkmrkOutput += String::Format("Computer IP: {0}\n", ip);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    String runnerUsb = String::Format("SYSTEM\\{0}\\Enum\\USBSTOR", ControlSet);
+    RegCommandClass cmdUsb();
+    RegCommandClass commandUsb(cmdUsb, runnerUsb, READKEY, HKEY_LOCAL_MACHINE, runnerUsb, "", 0, -1);
+    RegValueClass regValuesUsb();
+
+    if(regSys.Run(cmdUsb, regValuesUsb))
+    {
+      if(RegValueClass deviceInfoRoot = regValuesUsb.Find(runnerUsb))
+      {
+        foreach(RegValueClass child in deviceInfoRoot)
+        {
+          String temp = child.FullPath().SubString(34);
+          uint manuS = temp.Find("Ven_") + 4;
+          uint manuE = temp.Find("&Prod") - manuS;
+          String manufacturer = temp.SubString(manuS, manuE);
+          uint prodS = temp.Find("Prod_") + 5;
+          uint prodE = temp.Find("&Rev") - prodS;
+          String product = temp.SubString(prodS, prodE);
+
+          foreach(RegValueClass grandChild in child)
+          {
+            String iSerial = grandChild.Name();
+            int split = iSerial.Find("&");
+            iSerial = iSerial.SubString(0, split);
+            Usb newUsb(mainUsb, child.Name());
+            newUsb.Manufacturer = manufacturer;
+            newUsb.Product = product;
+            newUsb.ISerial = iSerial;
+          }
+        }
+      }
+    }
+
+    String runnerSd = String::Format("SYSTEM\\{0}\\Control\\Windows", ControlSet);
+    RegCommandClass cmdSd();
+    RegCommandClass commandSd(cmdSd, runnerSd, READKEY, HKEY_LOCAL_MACHINE, runnerSd, "", 0, -1);
+    RegValueClass regValuesSd();
+
+    if(regSys.Run(cmdSd, regValuesSd))
+    {
+      if(RegValueClass deviceInfoRoot = regValuesSd.Find(runnerSd))
+      {
+        foreach(RegValueClass child in deviceInfoRoot)
+        {
+          if(child.Name().Contains("ShutdownTime"))
+          {
+            Console.WriteLine("Last Shutdown: {0}", child.LastWritten().GetString());
+            BkmrkOutput += String::Format("Last Shutdown: {0}\n", child.LastWritten().GetString());
+          }
+        }
+      }
+    }
+  }
+
+  void HandleSecurity(RegistryClass regSec)
+  {
+    String runnerSec = "SECURITY\\Policy\\PolPrDmN";
+    RegCommandClass cmdSec();
+    RegCommandClass commandSec(cmdSec, runnerSec, READKEY, HKEY_LOCAL_MACHINE, runnerSec, "", 0, -1);
+    RegValueClass regValuesSec();
+
+    if(regSec.Run(cmdSec, regValuesSec))
+    {
+      if(RegValueClass deviceInfoRoot = regValuesSec.Find(runnerSec))
+      {
+        String text = deviceInfoRoot.ValueText();
+        for(int i = 0 ; i < text.GetLength() ; i)
+        {
+          Workgroup += GetChar(text.SubString(i, 2));
+          i += 3;
+        }
+      }
+    }
+  }
+
+  void HandleMapped(CaseClass c)
+  {
+    Mapped mainList();
+    int ticker;
+    String wiping = "Wiping Software in the MRU: ";
+    String encryption = "Encryption Software in the MRU: ";
+    String cloud = "Cloud Software in the MRU: ";
+    String users = "Users: ";
+    ItemIteratorClass iter(c, NORECURSE | NOPROXY, CURRENTVIEW);
+    while(EntryClass e = iter.GetNextEntry())
+    {
+      if(e.Name().Compare("ntuser.dat") == 0)
+      {
+        if(!e.ItemPath().Contains("Default"))
+        {
+          if(!e.ItemPath().Contains("LocalService"))
+          if(!e.ItemPath().Contains("NetworkService"))
+          if(!e.ItemPath().Contains("Public"))
+          {
+            String tempUser = e.ItemPath();
+            int split = tempUser.Find("\\Users\\") + 7;
+            tempUser = tempUser.SubString(split, -1);
+            split = tempUser.Find("\\");
+            tempUser = tempUser.SubString(0, split);
+            users += String::Format("\n- {0}", tempUser);
+            VolumeClass ntuser = e.MountVolume(1, "");
+            foreach(VolumeClass child in ntuser)
+            {
+              foreach(VolumeClass grandChild in child)
+              {
+                if(grandChild.Name().Contains("Network"))
+                foreach(VolumeClass greatChild in grandChild)
+                {
+                  String contents;
+                  contents += greatChild.Name();
+                  foreach(EntryClass elderChild in greatChild)
+                  {
+                    if(contents.GetLength() == 1)
+                    {
+                      String temp = ReadData(elderChild);
+                      if(temp.Find("\\\\") != -1)
+                        contents = String::Format("{0}: {1}", contents, temp);
+                    }
+                  }
+                  if(mainList.FirstChild())
+                  {
+                    bool foundMatch;
+                    foreach(Mapped map in mainList)
+                    {
+                      if(map.Str.Contains(contents))
+                      {
+                        foundMatch = true;
+                      }
+                    }
+                    if(!foundMatch)
+                    {
+                      Mapped drive(mainList, ticker++, contents);
+                      Console.WriteLine("- {0}", contents);
+                      BkmrkOutput += String::Format("- {0}\n", contents);
+                    }
+                  }
+                  else
+                  {
+                    Mapped drive(mainList, ticker++, contents);
+                    Console.WriteLine("- {0}", contents);
+                    BkmrkOutput += String::Format("- {0}\n", contents);
+                  }
+                }
+                else if(grandChild.Name().Contains("SOFTWARE"))
+                foreach(VolumeClass greatChild in grandChild)
+                {
+                  if(greatChild.Name().Contains("Microsoft"))
+                  foreach(VolumeClass elderChild in greatChild)
+                  {
+                    if(elderChild.Name().Contains("Windows"))
+                    foreach(VolumeClass venerableChild in elderChild)
+                    {
+                      if(venerableChild.Name().Contains("CurrentVersion"))
+                      foreach(VolumeClass ancientChild in venerableChild)
+                      {
+                        if(ancientChild.Name().Contains("Explorer"))
+                        foreach(VolumeClass primalChild in ancientChild)
+                        {
+                          if(primalChild.Name().Contains("ComDlg32"))
+                          foreach(VolumeClass primordialChild in primalChild)
+                          {
+                            if(primordialChild.Name().Contains("LastVisitedPidlMRULegacy"))
+                            {
+                              ParseMRU(primordialChild, wiping, encryption, cloud);
+                            }
+                            else if(primordialChild.Name().Contains("LastVisitedPidlMRU"))
+                            {
+                              ParseMRU(primordialChild, wiping, encryption, cloud);
+                            }
+                            else if(primordialChild.Name().Contains("CIDSizeMRU"))
+                            {
+                              ParseMRU(primordialChild, wiping, encryption, cloud);
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    Console.WriteLine(users);
+    BkmrkOutput += String::Format("{0}\n", users);
+    Console.WriteLine("Last Logged On User: {0}\nLast Log On Time: {1}", User, UserLogOnTime);
+    BkmrkOutput += String::Format("Last Logged On User: {0}\nLast Log On Time: {1}\n", User, UserLogOnTime);
+    if(cloud.GetLength() > 28)
+    {
+      Console.WriteLine(cloud);
+      BkmrkOutput += String::Format("{0}\n", cloud);
+    }
+    if(encryption.GetLength() > 33)
+    {
+      Console.WriteLine(encryption);
+      BkmrkOutput += String::Format("{0}\n", encryption);
+    }
+    if(wiping.GetLength() > 29)
+    {
+      Console.WriteLine(wiping);
+      BkmrkOutput += String::Format("{0}\n", wiping);
+    }
+  }
+
+  void HandleServices(CaseClass c, EntryClass eAm, EntryClass eAmTmp)
+  {
+    String wiping = "Wiping Software: ";
+    String encryption = "Encryption Software: ";
+    String cloud = "Cloud Software: ";
+
+    if(eAm)
+    {
+      VolumeClass amcache = eAm.MountVolume(1, "");
+      foreach(VolumeClass child in amcache)//{fff...}
+      {
+        foreach(VolumeClass grandChild in child)//Root
+        {
+          foreach(VolumeClass greatChild in grandChild)//Programs
+          {
+            if(greatChild.Name().Contains("Program"))
+            {
+              foreach(VolumeClass venerableChild in greatChild)
+              {
+                String name;
+                foreach(VolumeClass elderChild in venerableChild)
+                {
+                  if(elderChild.Name().Contains("0"))
+                    if(elderChild.Name().GetLength() == 1)
+                    {
+                      name = ReadData(elderChild);
+                      continue;
+                    }
+                }
+                if(name)
+                {
+                  CheckName(name, wiping, encryption, cloud);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    if(eAmTmp)
+    {
+      VolumeClass amcacheTmp = eAmTmp.MountVolume(1, "");
+      foreach(VolumeClass child in amcacheTmp)//{fff...}
+      {
+        foreach(VolumeClass grandChild in child)//Root
+        {
+          foreach(VolumeClass greatChild in grandChild)//Programs
+          {
+            if(greatChild.Name().Contains("Program"))
+            {
+              foreach(VolumeClass venerableChild in greatChild)
+              {
+                String name, vendor;
+                foreach(VolumeClass elderChild in venerableChild)
+                {
+                  if(elderChild.Name().Contains("0"))
+                    if(elderChild.Name().GetLength() == 1)
+                    {
+                      name = ReadData(elderChild);
+                      continue;
+                    }
+                }
+                if(name)
+                {
+                  CheckName(name, wiping, encryption, cloud);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    HandleServices(c, wiping, encryption, cloud);
+    if(cloud.GetLength() > 17)
+    {
+      Console.WriteLine(cloud);
+      BkmrkOutput += String::Format("{0}\n", cloud);
+    }
+    if(encryption.GetLength() > 22)
+    {
+      Console.WriteLine(encryption);
+      BkmrkOutput += String::Format("{0}\n", encryption);
+    }
+    if(wiping.GetLength() > 18)
+    {
+      Console.WriteLine(wiping);
+      BkmrkOutput += String::Format("{0}\n", wiping);
+    }
+  }
+
+  void HandleServices(CaseClass c, String &wiping, String &encryption, String &cloud)
+  {
+    ItemIteratorClass ipIter = new ItemIteratorClass(c, IterOptions, IterMode);
+    while(EntryClass e = ipIter.GetNextEntry())
+    {
+      if(e.Name().Contains("tor.exe") && e.Name().GetLength() == 7)
+      {
+        Console.WriteLine("Tor has been detected on this drive at '{0}'.", e.ItemPath());
+        BkmrkOutput += String::Format("Tor has been detected on this drive at '{0}'.", e.ItemPath());
+      }
+      if(e.ItemPath().Contains("Program Files"))
+      {
+        String name = e.ItemPath();
+        int split = e.ItemPath().Find("Program Files");
+        name = name.SubString(split, -1);
+        split = name.Find("\\")+1;
+        name = name.SubString(split, -1);
+        split = name.Find("\\");
+        name = name.SubString(0, split);
+        CheckName(name, wiping, encryption, cloud);
+      }
+      else if(e.ItemPath().Contains("ProgramData"))
+      {
+        String name = e.ItemPath();
+        int split = e.ItemPath().Find("ProgramData");
+        name = name.SubString(split, -1);
+        split = name.Find("\\")+1;
+        name = name.SubString(split, -1);
+        split = name.Find("\\");
+        name = name.SubString(0, split);
+        CheckName(name, wiping, encryption, cloud);
+      }
+      else if(e.ItemPath().Contains("AppData"))
+      {
+        String name = e.ItemPath();
+        int split = e.ItemPath().Find("AppData");
+        name = name.SubString(split, -1);
+        split = name.Find("\\")+1;
+        name = name.SubString(split, -1);
+        split = name.Find("\\")+1;
+        name = name.SubString(split, -1);
+        split = name.Find("\\");
+        name = name.SubString(0, split);
+        CheckName(name, wiping, encryption, cloud);
+      }
+    }
+  }
+
+  void HandleIPs(CaseClass c)
+  {
+    IpList mainList();
+    int ticker;
+    ItemIteratorClass ipIter = new ItemIteratorClass(c, IterOptions, IterMode);
+    while(EntryClass e = ipIter.GetNextEntry())
+    {
+      if(e.Extension().Contains("lnk"))
+      {
+        String contents;
+        EntryFileClass file();
+        file.Open(e, 0);
+        for(int i = 0; i < file.GetSize(); i++)
+        {
+          contents += GetCharFromInt(file.ReadChar());
+        }
+        if(contents.Contains("\\\\"))
+        {
+          int fVal = contents.Find("\\\\");
+          contents = contents.SubString(fVal+2, -1);
+          fVal = contents.Find("\\");
+          contents = contents.SubString(0, fVal);
+          if(mainList.FirstChild())
+          {
+            bool foundMatch;
+            foreach(IpList ip in mainList)
+            {
+              if(ip.IP.Contains(contents))
+              {
+                foundMatch = true;
+              }
+            }
+            if(!foundMatch)
+            {
+              IpList ip(mainList, ticker++, contents);
+              Console.WriteLine("- {0}", contents);
+              BkmrkOutput += String::Format("- {0}\n", contents);
+            }
+          }
+          else
+          {
+            IpList ip(mainList, ticker++, contents);
+            Console.WriteLine("- {0}", contents);
+            BkmrkOutput += String::Format("- {0}\n", contents);
+          }
+        }
+      }
+    }
+  }
+
+  //HELPER FUNCTIONS
+
+  String GetFileSystem(uint fs)
+  {
+    switch(fs)
+    {
+      case 0: return "UNKNOWN";
+      case 1: return "FAT";
+      case 2: return "NTFS";
+      case 3: return "EXT2";
+      case 4: return "CDFS";
+      case 5: return "HFSPLUG";
+      case 6: return "HFS";
+      case 7: return "UDF";
+      case 8: return "UFS";
+      case 9: return "SUN";
+      case 10: return "REISER";
+      case 11: return "NETWARE";
+      case 12: return "RAID";
+      case 13: return "EXT3";
+      case 14: return "JFS";
+      case 15: return "JFS2";
+      case 16: return "LOGICAL";
+      case 17: return "ITFS";
+      case 18: return "VIRTUAL";
+      case 19: return "HPFS";
+      case 20: return "UFS2";
+      case 21: return "ZFS";
+      case 22: return "SOLZFS";
+      case 23: return "EXFAT";
+      case 24: return "HPUXFS";
+      case 25: return "VXFS";
+      case 26: return "FAT12";
+      case 27: return "FAT16";
+      case 28: return "FAT32";
+      case 29: return "EXT4";
+      case 30: return "HFSZ";
+      case 31: return "YAFFS2";
+      case 32: return "ReFS";
+      case 33: return "BitLockerFS";
+      default: return "UNKNOWN";
+    }
+  }
+
+  void ParseMRU(VolumeClass vol, String &wiping, String &encryption, String &cloud)
+  {
+    foreach(EntryClass e in vol)
+    {
+      if(e.Name().Contains("MRUListEx"))
+        continue;
+      String sample = ReadData(e);
+      CheckName(sample, wiping, encryption, cloud);
+    }
+  }
+
+  void CheckName(String name, String &wiping, String &encryption, String &cloud)
+  {
+    name.ToUpper();
+    //Wiping software
+    if(name.Contains("CCLEANER"))
+    {
+      if(!wiping.Contains("CCleaner"))
+        wiping += "\n- CCleaner";
+    }
+    else if(name.Contains("RECUVA"))
+    {
+      if(!wiping.Contains("Recuva"))
+        wiping += "\n- Recuva";
+    }
+    else if(name.Contains("GLARY"))
+    {
+      if(!wiping.Contains("Glary"))
+        wiping += "\n- Glary Utilities";
+    }
+    else if(name.Contains("FREERASER"))
+    {
+      if(!wiping.Contains("Freeraser"))
+        wiping += "\n- Freeraser";
+    }
+    //Encryption software
+    else if(name.Contains("AXCRYPT"))
+    {
+      if(!encryption.Contains("AxCrypt"))
+        encryption += "\n- AxCrypt";
+    }
+    else if(name.Contains("VERACRYPT"))
+    {
+      if(!encryption.Contains("VeraCrypt"))
+        encryption += "\n- VeraCrypt";
+    }
+    else if(name.Contains("TRUECRYPT"))
+    {
+      if(!encryption.Contains("TrueCrypt"))
+        encryption += "\n- TrueCrypt";
+    }
+    else if(name.Contains("BITLOCKER"))
+    {
+      if(!encryption.Contains("BitLocker"))
+        encryption += "\n- BitLocker";
+    }
+    else if(name.Contains("GNUPG"))
+    {
+      if(!encryption.Contains("GNU Privacy Guard"))
+        encryption += "\n- GNU Privacy Guard";
+    }
+    else if(name.Contains("GNU PRIVACY GUARD"))
+    {
+      if(!encryption.Contains("GNU Privacy Guard"))
+        encryption += "\n- GNU Privacy Guard";
+    }
+    else if(name.Contains("CRYPTAINER"))
+    {
+      if(!encryption.Contains("Cryptainer"))
+        encryption += "\n- Cryptainer";
+    }
+    //Cloud software
+    else if(name.Contains("DROPBOX"))
+    {
+      if(!cloud.Contains("DropBox"))
+        cloud += "\n- DropBox";
+    }
+    else if(name.Contains("ONEDRIVE"))
+    {
+      if(!cloud.Contains("OneDrive"))
+        cloud += "\n- OneDrive";
+    }
+    else if(name.Contains("ONE DRIVE"))
+    {
+      if(!cloud.Contains("OneDrive"))
+        cloud += "\n- OneDrive";
+    }
+    else if(name.Contains("GITHUB"))
+    {
+      if(!cloud.Contains("GitHub"))
+        cloud += "\n- GitHub";
+    }
+    else if(name.Contains("GIT"))
+    {
+      if(!cloud.Contains("Git"))
+        cloud += "\n- Git";
+    }
+    else if(name.Contains("EMULE"))
+    {
+      if(!cloud.Contains("eMule"))
+        cloud += "\n- eMule";
+    }
+    else if(name.Contains("UTORRENT"))
+    {
+      if(!cloud.Contains("uTorrent"))
+        cloud += "\n- uTorrent";
+    }
+    else if(name.Contains("BITTORRENT"))
+    {
+      if(!cloud.Contains("BitTorrent"))
+        cloud += "\n- BitTorrent";
+    }
+    else if(name.Contains("BIT TORRENT"))
+    {
+      if(!cloud.Contains("BitTorrent"))
+        cloud += "\n- BitTorrent";
+    }
+    else if(name.Contains("MORPHEUS"))
+    {
+      if(!cloud.Contains("Morpheus"))
+        cloud += "\n- Morpheus";
+    }
+    else if(name.Contains("NODEZILLA"))
+    {
+      if(!cloud.Contains("Nodezilla"))
+        cloud += "\n- Nodezilla";
+    }
+    else if(name.Contains("GIGATRIBE"))
+    {
+      if(!cloud.Contains("GigaTribe"))
+        cloud += "\n- GigaTribe";
+    }
+    else if(name.Contains("SHAREGHOST"))
+    {
+      if(!cloud.Contains("ShareGhost"))
+        cloud += "\n- ShareGhost";
+    }
+    else if(name.Contains("SHARIN'HOOD"))
+    {
+      if(!cloud.Contains("Sharin'Hood"))
+        cloud += "\n- Sharin'Hood";
+    }
+    else if(name.Contains("ARES"))
+    {
+      if(!cloud.Contains("Ares"))
+        cloud += "\n- Ares";
+    }
+    else if(name.Contains("SHAREST"))
+    {
+      if(!cloud.Contains("Sharest"))
+        cloud += "\n- Sharest";
+    }
+    else if(name.Contains("BITROPE"))
+    {
+      if(!cloud.Contains("BitRope"))
+        cloud += "\n- BitRope";
+    }
+    else if(name.Contains("P2PHOOD"))
+    {
+      if(!cloud.Contains("P2PHood"))
+        cloud += "\n- P2PHood";
+    }
+    else if(name.Contains("SHAREAZA"))
+    {
+      if(!cloud.Contains("Shareaza"))
+        cloud += "\n- Shareaza";
+    }
+    else if(name.Contains("KOOLWIRE"))
+    {
+      if(!cloud.Contains("KoolWire"))
+        cloud += "\n- KoolWire";
+    }
+    else if(name.Contains("YET ANOTHER UTORRENT"))
+    {
+      if(!cloud.Contains("Yet Another uTorrent"))
+        cloud += "\n- Yet Another uTorrent";
+    }
+  }
+
+  String ReadData(EntryClass entry)
+  {
+    EntryFileClass input();
+    int count;
+    if (input.Open(entry, FileClass::TEXTCRLF))
+    {
+      String final;
+      return ReadData(final, input, count);
+    }
+    else
+    {
+      return "";
+    }
+  }
+
+  String ReadData(const String &str, EntryFileClass &input, int &count)
+  {
+    if(input.More())
+    {
+      String temp;
+      input.ReadString(temp);
+      count++;
+      if(count < 1232)
+        return String::Format("{1}{0}", ReadData(str, input, count), temp);
+      else
+        return String::Format("{0}...", str);
+    }
+    else
+    {
+      return str;
+    }
+  }
+
+  String GetChar(const String &source)
+  {
+    int val = int::Convert(source, HEX);
+    switch(val)
+    {
+      case 65: return "A";
+      case 66: return "B";
+      case 67: return "C";
+      case 68: return "D";
+      case 69: return "E";
+      case 70: return "F";
+      case 71: return "G";
+      case 72: return "H";
+      case 73: return "I";
+      case 74: return "J";
+      case 75: return "K";
+      case 76: return "L";
+      case 77: return "M";
+      case 78: return "N";
+      case 79: return "O";
+      case 80: return "P";
+      case 81: return "Q";
+      case 82: return "R";
+      case 83: return "S";
+      case 84: return "T";
+      case 85: return "U";
+      case 86: return "V";
+      case 87: return "W";
+      case 88: return "X";
+      case 89: return "Y";
+      case 90: return "Z";
+
+      case 97: return "a";
+      case 98: return "b";
+      case 99: return "c";
+      case 100: return "d";
+      case 101: return "e";
+      case 102: return "f";
+      case 103: return "g";
+      case 104: return "h";
+      case 105: return "i";
+      case 106: return "j";
+      case 107: return "k";
+      case 108: return "l";
+      case 109: return "m";
+      case 110: return "n";
+      case 111: return "o";
+      case 112: return "p";
+      case 113: return "q";
+      case 114: return "r";
+      case 115: return "s";
+      case 116: return "t";
+      case 117: return "u";
+      case 118: return "v";
+      case 119: return "w";
+      case 120: return "x";
+      case 121: return "y";
+      case 122: return "z";
+
+      case 48: return "0";
+      case 49: return "1";
+      case 50: return "2";
+      case 51: return "3";
+      case 52: return "4";
+      case 53: return "5";
+      case 54: return "6";
+      case 55: return "7";
+      case 56: return "8";
+      case 57: return "9";
+
+      case 32: return " ";
+      case 33: return "!";
+      case 34: return "\"";
+      case 35: return "#";
+      case 36: return "$";
+      case 37: return "%";
+      case 38: return "&";
+      case 39: return "'";
+      case 40: return "(";
+      case 41: return ")";
+      case 42: return "*";
+      case 43: return "+";
+      case 44: return ",";
+      case 45: return "-";
+      case 46: return ".";
+      case 47: return "/";
+      case 58: return ":";
+      case 59: return ";";
+      case 60: return "<";
+      case 61: return "=";
+      case 62: return ">";
+      case 63: return "?";
+      case 64: return "@";
+      case 91: return "[";
+      case 92: return "\\";
+      case 93: return "]";
+      case 94: return "^";
+      case 95: return "_";
+      case 123: return "{";
+      case 124: return "|";
+      case 125: return "}";
+    }
+    return "";
+  }
+
+  String GetCharFromInt(int val)
+  {
+    switch(val)
+    {
+      case 65: return "A";
+      case 66: return "B";
+      case 67: return "C";
+      case 68: return "D";
+      case 69: return "E";
+      case 70: return "F";
+      case 71: return "G";
+      case 72: return "H";
+      case 73: return "I";
+      case 74: return "J";
+      case 75: return "K";
+      case 76: return "L";
+      case 77: return "M";
+      case 78: return "N";
+      case 79: return "O";
+      case 80: return "P";
+      case 81: return "Q";
+      case 82: return "R";
+      case 83: return "S";
+      case 84: return "T";
+      case 85: return "U";
+      case 86: return "V";
+      case 87: return "W";
+      case 88: return "X";
+      case 89: return "Y";
+      case 90: return "Z";
+
+      case 97: return "a";
+      case 98: return "b";
+      case 99: return "c";
+      case 100: return "d";
+      case 101: return "e";
+      case 102: return "f";
+      case 103: return "g";
+      case 104: return "h";
+      case 105: return "i";
+      case 106: return "j";
+      case 107: return "k";
+      case 108: return "l";
+      case 109: return "m";
+      case 110: return "n";
+      case 111: return "o";
+      case 112: return "p";
+      case 113: return "q";
+      case 114: return "r";
+      case 115: return "s";
+      case 116: return "t";
+      case 117: return "u";
+      case 118: return "v";
+      case 119: return "w";
+      case 120: return "x";
+      case 121: return "y";
+      case 122: return "z";
+
+      case 48: return "0";
+      case 49: return "1";
+      case 50: return "2";
+      case 51: return "3";
+      case 52: return "4";
+      case 53: return "5";
+      case 54: return "6";
+      case 55: return "7";
+      case 56: return "8";
+      case 57: return "9";
+
+      case 32: return " ";
+      case 33: return "!";
+      case 34: return "\"";
+      case 35: return "#";
+      case 36: return "$";
+      case 37: return "%";
+      case 38: return "&";
+      case 39: return "'";
+      case 40: return "(";
+      case 41: return ")";
+      case 42: return "*";
+      case 43: return "+";
+      case 44: return ",";
+      case 45: return "-";
+      case 46: return ".";
+      case 47: return "/";
+      case 58: return ":";
+      case 59: return ";";
+      case 60: return "<";
+      case 61: return "=";
+      case 62: return ">";
+      case 63: return "?";
+      case 64: return "@";
+      case 91: return "[";
+      case 92: return "\\";
+      case 93: return "]";
+      case 94: return "^";
+      case 95: return "_";
+      case 123: return "{";
+      case 124: return "|";
+      case 125: return "}";
+    }
+    return "";
+  }
+}

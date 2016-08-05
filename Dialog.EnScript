@@ -1,0 +1,15 @@
+class Dialog : DialogClass
+{
+  MainClass                         M;
+  CaseClass                         C;
+  StringEditClass                   btnBookmarkName;
+
+  Dialog (MainClass m, CaseClass c) :
+    super(null, "System Snap Shot"),
+    M = m,
+    C = c,
+    btnBookmarkName(this, "Bookmark Name", START, START, 300, DEFAULT, 0, M.BookmarkName, -1, REQUIRED)
+    {
+
+    }
+}

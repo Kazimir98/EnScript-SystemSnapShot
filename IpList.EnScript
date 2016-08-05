@@ -1,0 +1,11 @@
+class IpList : NameListClass
+{
+  //Class Objects
+  String     IP;
+
+  IpList(IpList parent = null, const String &name = "", const String &ip = "") :
+  super(parent, name)
+  {
+    IP = ip;
+  }
+}

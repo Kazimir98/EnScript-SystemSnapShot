@@ -1,0 +1,12 @@
+class Usb : NameListClass
+{
+  //Class Objects
+  String     Manufacturer;
+  String     Product;
+  String     ISerial;
+
+  Usb(Usb parent = null, const String &name = "") :
+  super(parent, name)
+  {
+  }
+}
