@@ -105,7 +105,7 @@ class MainClass
                   int bias = vol.GetDisplayBias(biasDate);
                   Console.WriteLine("Time Zone: UTC{0}", bias/3600);
                   BkmrkOutput += String::Format("Time Zone: UTC{0}\n", bias/3600);
-                  if(e.Find("/dev/null"))
+                  if(e.Find("\\dev\\null"))
                   {
                     Console.WriteLine("Unsupported Mac/Linux OS Partition.");
                     BkmrkOutput += "Unsupported Mac/Linux OS Partition.\n";
